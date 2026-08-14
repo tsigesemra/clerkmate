@@ -1,8 +1,12 @@
-"use client";
+"use client"
 import { useState } from "react";
 import { ArrowRight, FileText, Menu, Stethoscope, X } from "lucide-react";
-export function Navbar() {
+export function Navbar({ onStartCase }: { onStartCase?: () => void }) {
   const [open, setOpen] = useState(false);
+  const start = () => {
+    setOpen(false);
+    onStartCase?.();
+  };
   return (
     <nav className="nav-shell">
       <a href="#top" className="brand" aria-label="ClerkMate home">
@@ -22,17 +26,13 @@ export function Navbar() {
         <a href="#resources" onClick={() => setOpen(false)}>
           Resources
         </a>
-        <a
-          href="#start"
-          className="mobile-start"
-          onClick={() => setOpen(false)}
-        >
+        <button className="mobile-start" onClick={start}>
           Start a case <ArrowRight size={14} />
-        </a>
+        </button>
       </div>
-      <a href="#start" className="nav-cta">
+      <button className="nav-cta" onClick={start}>
         Start a case <ArrowRight size={14} />
-      </a>
+      </button>
       <button
         className="menu-button"
         onClick={() => setOpen(!open)}
