@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { ArrowRight, Check, Eye, EyeOff, X } from "lucide-react";
+import { createClient } from "@/lib/supabase/client";
 
 type AuthMode = "signup" | "login";
 
@@ -16,6 +17,19 @@ export function AuthModal({
   const [showPassword, setShowPassword] = useState(false);
   const [submitted, setSubmitted] = useState(false);
 
+  // NEW: form state
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+
+  // NEW: error state
+  const [error, setError] = useState("");
+
+  // NEW: loading state
+  const [loading, setLoading] = useState(false);
+
+  // NEW: create Supabase client
+  const supabase = createClient();
+
   if (!open) return null;
 
   const isSignup = mode === "signup";
@@ -24,6 +38,46 @@ export function AuthModal({
     setMode(nextMode);
     setSubmitted(false);
     setShowPassword(false);
+    setError("");
+  }
+
+  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    setError("");
+    setLoading(true);
+
+    try {
+      if (isSignup) {
+        // SIGN UP
+        const { error } = await supabase.auth.signUp({
+          email,
+          password,
+        });
+
+        if (error) {
+          setError(error.message);
+          return;
+        }
+
+        setSubmitted(true);
+      } else {
+        // LOGIN
+        const { error } = await supabase.auth.signInWithPassword({
+          email,
+          password,
+        });
+
+        if (error) {
+          setError(error.message);
+          return;
+        }
+
+        setSubmitted(true);
+      }
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
@@ -47,39 +101,50 @@ export function AuthModal({
         >
           <X size={17} />
         </button>
+
         <div className="auth-kicker">
           <span className="status-dot" /> ClerkMate access
         </div>
+
         <h2 id="auth-title">
           {isSignup ? "Create your account" : "Welcome back"}
         </h2>
+
         <p className="auth-intro">
           {isSignup
             ? "Start building a calmer, more complete clinical history."
             : "Continue preparing for better bedside conversations."}
         </p>
+
         {submitted ? (
           <div className="auth-success">
             <Check size={20} />
+
             <p>
               {isSignup
                 ? "Your account is ready to begin."
                 : "You are signed in."}
             </p>
+
             <button className="button-primary" onClick={onClose}>
               Continue <ArrowRight size={14} />
             </button>
           </div>
         ) : (
-          <form
-            onSubmit={(event) => {
-              event.preventDefault();
-              setSubmitted(true);
-            }}
-          >
+          <form onSubmit={handleSubmit}>
             <label htmlFor="auth-email">Email</label>
-            <input id="auth-email" type="email" autoComplete="email" required />
+
+            <input
+              id="auth-email"
+              type="email"
+              autoComplete="email"
+              required
+              value={email}
+              onChange={(event) => setEmail(event.target.value)}
+            />
+
             <label htmlFor="auth-password">Password</label>
+
             <div className="auth-password">
               <input
                 id="auth-password"
@@ -87,23 +152,47 @@ export function AuthModal({
                 autoComplete={isSignup ? "new-password" : "current-password"}
                 required
                 minLength={6}
+                value={password}
+                onChange={(event) => setPassword(event.target.value)}
               />
+
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
                 aria-label={showPassword ? "Hide password" : "Show password"}
               >
-                {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                {showPassword ? (
+                  <EyeOff size={16} />
+                ) : (
+                  <Eye size={16} />
+                )}
               </button>
             </div>
-            <button className="button-primary auth-submit" type="submit">
-              {isSignup ? "Create account" : "Log in"} <ArrowRight size={14} />
+
+            {/* NEW: display Supabase errors */}
+            {error && <p className="auth-error">{error}</p>}
+
+            <button
+              className="button-primary auth-submit"
+              type="submit"
+              disabled={loading}
+            >
+              {loading
+                ? "Please wait..."
+                : isSignup
+                  ? "Create account"
+                  : "Log in"}
+
+              {!loading && <ArrowRight size={14} />}
             </button>
           </form>
         )}
+
         <p className="auth-switch">
           {isSignup ? "Already have an account?" : "New to ClerkMate?"}{" "}
-          <button onClick={() => switchMode(isSignup ? "login" : "signup")}>
+          <button
+            onClick={() => switchMode(isSignup ? "login" : "signup")}
+          >
             {isSignup ? "Log in" : "Create an account"}
           </button>
         </p>
