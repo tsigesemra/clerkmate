@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { ArrowRight, Check, Eye, EyeOff, X } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 
@@ -29,6 +30,7 @@ export function AuthModal({
 
   // NEW: create Supabase client
   const supabase = createClient();
+  const router = useRouter();
 
   if (!open) return null;
 
@@ -73,7 +75,7 @@ export function AuthModal({
           return;
         }
 
-        setSubmitted(true);
+        router.push("/dashboard");
       }
     } finally {
       setLoading(false);
@@ -126,7 +128,7 @@ export function AuthModal({
                 : "You are signed in."}
             </p>
 
-            <button className="button-primary" onClick={onClose}>
+            <button className="button-primary" onClick={() => router.push("/dashboard")}>
               Continue <ArrowRight size={14} />
             </button>
           </div>
@@ -161,11 +163,7 @@ export function AuthModal({
                 onClick={() => setShowPassword(!showPassword)}
                 aria-label={showPassword ? "Hide password" : "Show password"}
               >
-                {showPassword ? (
-                  <EyeOff size={16} />
-                ) : (
-                  <Eye size={16} />
-                )}
+                {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
               </button>
             </div>
 
@@ -190,9 +188,7 @@ export function AuthModal({
 
         <p className="auth-switch">
           {isSignup ? "Already have an account?" : "New to ClerkMate?"}{" "}
-          <button
-            onClick={() => switchMode(isSignup ? "login" : "signup")}
-          >
+          <button onClick={() => switchMode(isSignup ? "login" : "signup")}>
             {isSignup ? "Log in" : "Create an account"}
           </button>
         </p>
